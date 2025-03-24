@@ -1,66 +1,64 @@
-def determine_point_position(
-        circle_center_x, circle_center_y, radius, point_x, point_y):
-    """
-    Определяет положение точки относительно окружности:
-    0 - точка лежит на окружности
-    1 - точка внутри окружности
-    2 - точка снаружи окружности.
-    """
-    # Вычисляем квадрат расстояния от точки до центра окружности
-    distance_squared = (point_x - circle_center_x) ** 2 + (
-            point_y - circle_center_y) ** 2
+import sys
 
-    # Вычисляем квадрат радиуса (для избежания погрешностей при сравнении)
-    radius_squared = radius ** 2
 
-    # Определяем положение точки
-    if abs(
-            distance_squared - radius_squared) < 1e-10:  # Погрешность
-        return 0  # На окружности
-    elif distance_squared < radius_squared:
-        return 1  # Внутри окружности
+def point_position(circle_x, circle_y, circle_r, point_x, point_y):
+    """
+    Определяет положения точки относительно окружности.
+    """
+    distance = (circle_x - point_x) ** 2 + (circle_y - point_y) ** 2
+    radius = circle_r ** 2
+
+    if distance == radius:
+        return 0
+    elif distance < radius:
+        return 1
     else:
-        return 2  # Снаружи окружности
+        return 2
 
 
-def main():
+def is_valid_number(num):
+    return (10 ** -38 <= num <= 10 ** 38) or num == 0
+
+
+if __name__ == '__main__':
     try:
-        # Запрашиваем пути к файлам у пользователя
-        circle_file_path = input(
-            'Введите путь к файлу с параметрами окружности: ')
-        points_file_path = input('Введите путь к файлу с координатами точек: ')
+        if len(sys.argv) != 3:
+            print(
+                'Использование: python ./task2/task2.py ./task2/circle.txt '
+                './task2/points.txt'
+            )
+            sys.exit(1)
 
-        # Читаем данные об окружности
-        with open(circle_file_path, 'r') as circle_file:
-            # Первая строка - координаты центра
-            center_coords = circle_file.readline().strip().split()
-            circle_center_x = float(center_coords[0])
-            circle_center_y = float(center_coords[1])
+        with open(sys.argv[1], 'r') as f:
+            lines = f.readlines()
+            circle_x, circle_y = map(float, lines[0].split())
+            circle_r = float(lines[1].strip())
 
-            # Вторая строка - радиус
-            radius = float(circle_file.readline().strip())
+            if not all(
+                    is_valid_number(val) for val in
+                    [circle_x, circle_y, circle_r]):
+                raise ValueError(
+                    'Параметры окружности вне допустимого диапазона.')
 
-        # Читаем координаты точек
-        with open(points_file_path, 'r') as points_file:
+        with open(sys.argv[2], 'r') as f:
             points = []
-            for line in points_file:
-                if line.strip():  # Проверяем, что строка не пустая
-                    coords = line.strip().split()
-                    points.append((float(coords[0]), float(coords[1])))
+            for line in f:
+                if not line.strip():
+                    continue
 
-        # Определяем положение каждой точки и выводим результат
-        for point_x, point_y in points:
-            position = determine_point_position(
-                circle_center_x, circle_center_y, radius, point_x, point_y)
-            print(position)
+                x, y = map(float, line.split())
+                if not (is_valid_number(x) and is_valid_number(y)):
+                    raise ValueError(
+                        f'Координаты {x}, {y} вне допустимого диапазона.')
+                points.append((x, y))
+
+            if not 1 <= len(points) <= 100:
+                raise ValueError(
+                    f'Недопустимое количество точек: {len(points)}')
+
+        # Определяем и выводим положение каждой точки
+        for x, y in points:
+            print(point_position(circle_x, circle_y, circle_r, x, y))
 
     except FileNotFoundError:
-        print('Ошибка: один из указанных файлов не найден')
-    except ValueError:
-        print('Ошибка: некорректный формат данных в файлах')
-    except Exception as e:
-        print(f'Произошла ошибка: {e}')
-
-
-if __name__ == "__main__":
-    main()
+        print('Один из файлов не найден.')
